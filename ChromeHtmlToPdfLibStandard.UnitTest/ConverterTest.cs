@@ -2,11 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using ChromeHtmlToPdfLib;
 using ChromeHtmlToPdfLib.Settings;
-using Microsoft.Extensions.Logging;
 using Xunit;
 
 namespace ChromeHtmlToPdfLibStandard.UnitTest
@@ -30,103 +28,84 @@ namespace ChromeHtmlToPdfLibStandard.UnitTest
         }
         
         [Fact]
-        public void TestHtml()
+        public async Task TestHtml()
         {
             var infile = Guid.NewGuid() + ".html";
             var outfile = Guid.NewGuid() + ".pdf";
             infile = Path.Combine(Path.GetTempPath(), infile);
-            outfile = Path.Combine(Path.GetTempPath(), outfile);
-            File.WriteAllText(infile, _htmlFileContent);
+            await File.WriteAllTextAsync(infile, _htmlFileContent);
 
-            Convert(infile, outfile);
+            await ConvertAsync(infile);
         }
         
         [Fact]
-        public void TestText()
+        public async Task TestText()
         {
             var infile = Guid.NewGuid() + ".txt";
-            var outfile = Guid.NewGuid() + ".pdf";
             infile = Path.Combine(Path.GetTempPath(), infile);
-            outfile = Path.Combine(Path.GetTempPath(), outfile);
-            File.WriteAllText(infile, _textFileContent);
-
-            Convert(infile, outfile);
+            await File.WriteAllTextAsync(infile, _textFileContent);
+            await ConvertAsync(infile);
         }
         
         [Fact]
-        public void TestXml()
+        public async Task TestXml()
         {
             var infile = Guid.NewGuid() + ".xml";
             var outfile = Guid.NewGuid() + ".pdf";
             infile = Path.Combine(Path.GetTempPath(), infile);
-            outfile = Path.Combine(Path.GetTempPath(), outfile);
-            File.WriteAllText(infile, _xmlFileContent);
+            await File.WriteAllTextAsync(infile, _xmlFileContent);
 
-            Convert(infile, outfile);
+            await ConvertAsync(infile);
         }
 
         [Fact]
         public void TreadingStressTest()
         {
-            using(var chrome = new ChromeProcess())
+            using var chrome = new ChromeProcess();
+            chrome.EnsureRunning();
+            var infile = Guid.NewGuid() + ".xml";
+            infile = Path.Combine(Path.GetTempPath(), infile);
+            File.WriteAllText(infile, _xmlFileContent);
+            var tasks = new List<Task>();
+            for (var i = 0; i < 100; i++)
             {
-                chrome.EnsureRunning();
-                var infile = Guid.NewGuid() + ".xml";
-                infile = Path.Combine(Path.GetTempPath(), infile);
-                File.WriteAllText(infile, _xmlFileContent);
-                var tasks = new List<Task>();
-                for (var i = 0; i < 100; i++)
-                {
-                    tasks.Add(Task.Run(() =>
-                    {
-                        var outfile = Guid.NewGuid() + ".pdf";
-                        outfile = Path.Combine(Path.GetTempPath(), outfile);
-                        ConvertWithProcess(chrome, infile, outfile);
-                    }));
-                }
-
-                Task.WaitAll(tasks.ToArray());
+                tasks.Add(ConvertWithProcessAsync(chrome, infile));
             }
+
+            Task.WaitAll(tasks.ToArray());
         }
         
         [Fact]
-        public void StressTest()
+        public async Task StressTest()
         {
-            using(var chrome = new ChromeProcess())
+            using var chrome = new ChromeProcess();
+            chrome.EnsureRunning();
+            var infile = Guid.NewGuid() + ".xml";
+            infile = Path.Combine(Path.GetTempPath(), infile);
+            await File.WriteAllTextAsync(infile, _xmlFileContent);
+            for (var i = 0; i < 100; i++)
             {
-                chrome.EnsureRunning();
-                var infile = Guid.NewGuid() + ".xml";
-                infile = Path.Combine(Path.GetTempPath(), infile);
-                File.WriteAllText(infile, _xmlFileContent);
-                for (var i = 0; i < 100; i++)
-                {
-                    var outfile = Guid.NewGuid() + ".pdf";
-                    outfile = Path.Combine(Path.GetTempPath(), outfile);
-                    ConvertWithProcess(chrome, infile, outfile);
-                }
+                await ConvertWithProcessAsync(chrome, infile);
             }
         }
 
-        private void ConvertWithProcess(ChromeProcess process, string infile, string outfile)
+        private async Task ConvertWithProcessAsync(ChromeProcess process, string infile)
         {
             var pageSettings = new PageSettings();
 
-            using (var converter = new Converter(process))
-            {
-                converter.ConvertToPdf(new ConvertUri(infile), outfile, pageSettings);
-            }
-
-            if (!File.Exists(outfile))
-                throw new Exception($"HTML to PDF conversion failed; No result: {outfile}");
+            using var memoryStream = new MemoryStream();
+            using var converter = new Converter(process);
+            await converter.ConvertToPdfAsync(new ConvertUri(infile), memoryStream, pageSettings);
+            //Some random non empty bytes
+            if (memoryStream.Length < 1000)
+                throw new Exception($"HTML to PDF conversion failed; No result");
         }
 
-        private void Convert(string infile, string outfile, ILogger logger = null)
+        private async Task ConvertAsync(string infile)
         {
-            using (var chrome = new ChromeProcess())
-            {
-                chrome.EnsureRunning();
-                ConvertWithProcess(chrome, infile, outfile);
-            }
+            using var chrome = new ChromeProcess();
+            chrome.EnsureRunning();
+            await ConvertWithProcessAsync(chrome, infile);
         }
     }
 }

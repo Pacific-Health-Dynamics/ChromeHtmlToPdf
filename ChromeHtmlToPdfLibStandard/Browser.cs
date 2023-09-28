@@ -27,6 +27,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Threading.Tasks;
 using ChromeHtmlToPdfLib.Exceptions;
 using ChromeHtmlToPdfLib.Helpers;
 using ChromeHtmlToPdfLib.Protocol;
@@ -106,17 +107,9 @@ namespace ChromeHtmlToPdfLib
         /// <summary>
         ///     Instructs Chrome to navigate to the given <paramref name="uri" />
         /// </summary>
-        /// <param name="uri"></param>
-        /// <param name="countdownTimer">
-        ///     If a <see cref="CountdownTimer" /> is set then
-        ///     the method will raise an <see cref="ConversionTimedOutException" /> if the
-        ///     <see cref="CountdownTimer" /> reaches zero before finishing navigation
-        /// </param>
-        /// <exception cref="ChromeException">Raised when an error is returned by Chrome</exception>
-        /// <exception cref="ConversionTimedOutException">Raised when <paramref name="countdownTimer" /> reaches zero</exception>
-        public void NavigateTo(Uri uri, CountdownTimer countdownTimer = null)
+        public async Task NavigateToAsync(Uri uri, CancellationToken cancellationToken = default)
         {
-            _pageConnection.SendAsync(new Message {Method = "Page.enable"}).GetAwaiter();
+            await _pageConnection.SendAsync(new Message {Method = "Page.enable"}, cancellationToken);
 
             var message = new Message {Method = "Page.navigate"};
             message.AddParameter("url", uri.ToString());
@@ -140,22 +133,11 @@ namespace ChromeHtmlToPdfLib
 
             _pageConnection.MessageReceived += MessageReceived;
             _pageConnection.Closed += (sender, args) => { waitEvent.Set(); };
-            _pageConnection.SendAsync(message).GetAwaiter();
-
-            if (countdownTimer != null)
-            {
-                waitEvent.WaitOne(countdownTimer.MillisecondsLeft);
-                if (countdownTimer.MillisecondsLeft == 0)
-                    throw new ConversionTimedOutException($"The {nameof(NavigateTo)} method timedout");
-            }
-            else
-            {
-                waitEvent.WaitOne();
-            }
+            await _pageConnection.SendAsync(message, cancellationToken);
 
             _pageConnection.MessageReceived -= MessageReceived;
 
-            _pageConnection.SendAsync(new Message {Method = "Page.disable"}).GetAwaiter();
+            await _pageConnection.SendAsync(new Message {Method = "Page.disable"}, cancellationToken);
         }
 
         #endregion
@@ -214,20 +196,7 @@ namespace ChromeHtmlToPdfLib
         /// <summary>
         ///     Instructs Chrome to print the page
         /// </summary>
-        /// <param name="pageSettings">
-        ///     <see cref="PageSettings" />
-        /// </param>
-        /// <param name="countdownTimer">
-        ///     If a <see cref="CountdownTimer" /> is set then
-        ///     the method will raise an <see cref="ConversionTimedOutException" /> in the
-        ///     <see cref="CountdownTimer" /> reaches zero before finishing the printing to pdf
-        /// </param>
-        /// <remarks>
-        ///     See https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF
-        /// </remarks>
-        /// <exception cref="ConversionException">Raised when Chrome returns an empty string</exception>
-        /// <exception cref="ConversionTimedOutException">Raised when <paramref name="countdownTimer" /> reaches zero</exception>
-        internal PrintToPdfResponse PrintToPdf(PageSettings pageSettings, CountdownTimer countdownTimer = null)
+        internal async Task<PrintToPdfResponse> PrintToPdfAsync(PageSettings pageSettings, CancellationToken cancellationToken = default)
         {
             var message = new Message {Method = "Page.printToPDF"};
             message.AddParameter("landscape", pageSettings.Landscape);
@@ -248,9 +217,7 @@ namespace ChromeHtmlToPdfLib
                 message.AddParameter("footerTemplate", pageSettings.FooterTemplate);
             message.AddParameter("preferCSSPageSize", pageSettings.PreferCSSPageSize);
 
-            var result = countdownTimer == null
-                ? _pageConnection.SendAsync(message).GetAwaiter().GetResult()
-                : _pageConnection.SendAsync(message).Timeout(countdownTimer.MillisecondsLeft).GetAwaiter().GetResult();
+            var result = await _pageConnection.SendAsync(message, cancellationToken);
 
             var printToPdfResponse = PrintToPdfResponse.FromJson(result);
 
@@ -273,15 +240,12 @@ namespace ChromeHtmlToPdfLib
         ///     <see cref="CountdownTimer" /> reaches zero before Chrome response that it is going to close
         /// </param>
         /// <exception cref="ChromeException">Raised when an error is returned by Chrome</exception>
-        public void Close(CountdownTimer countdownTimer = null)
+        public async Task CloseAsync(CancellationToken cancellationToken = default)
         {
             var message = new Message {Method = "Target.closeTarget"};
             message.AddParameter("targetId", _pageConnection.TargetId);
 
-            if (countdownTimer != null)
-                _pageConnection.SendAsync(message).Timeout(countdownTimer.MillisecondsLeft).GetAwaiter();
-            else
-                _pageConnection.SendAsync(message).GetAwaiter();
+            await _pageConnection.SendAsync(message, cancellationToken);
         }
 
         #endregion

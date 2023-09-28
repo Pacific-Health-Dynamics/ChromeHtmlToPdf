@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using ChromeHtmlToPdfLib.Exceptions;
 using ChromeHtmlToPdfLib.Protocol;
@@ -25,7 +26,7 @@ namespace ChromeHtmlToPdfLib
             {
                 EmitOnPing = false,
                 EnableRedirection = true,
-                Log = {Output = (_, __) => { }}
+                Log = { Output = (_, __) => { } }
             };
 
             WebSocket.OnMessage += Websocket_OnMessage;
@@ -58,15 +59,16 @@ namespace ChromeHtmlToPdfLib
         /// <summary>
         ///     Sends a message asynchronously to the <see cref="WebSocket" />
         /// </summary>
-        /// <param name="message">The message to send</param>
-        /// <returns></returns>
-        internal async Task<string> SendAsync(Message message)
+        internal Task<string> SendAsync(Message message, CancellationToken cancellationToken = default)
         {
-            _messageId += 1;
-            message.Id = _messageId;
-            _response = new TaskCompletionSource<string>();
-            WebSocket.Send(message.ToJson());
-            return await _response.Task;
+            return Task.Run(async () =>
+            {
+                _messageId += 1;
+                message.Id = _messageId;
+                _response = new TaskCompletionSource<string>();
+                WebSocket.Send(message.ToJson());
+                return await _response.Task;
+            }, cancellationToken);
         }
 
         #endregion

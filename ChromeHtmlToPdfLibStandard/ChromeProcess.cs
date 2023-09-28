@@ -747,22 +747,33 @@ namespace ChromeHtmlToPdfLib
         /// <param name="processId">The process id</param>
         private void KillProcessAndChildren()
         {
-            Process.GetProcesses()
+            
+            var procs = Process.GetProcesses()
                 .Where(proc =>
                 {
                     try
                     {
-                        if (proc.ProcessName.ToLower().Contains("chrome") &&
-                            proc.StartInfo.Environment.ContainsKey(UniqueEnviromentKey))
-                            proc.Kill();
+                        return proc.ProcessName.ToLower().Contains("chrome") &&
+                               proc.StartInfo.Environment.ContainsKey(UniqueEnviromentKey);
                     }
-                    catch
+                    catch (Exception)
                     {
-                        //Nothing
+                        return false;
                     }
-
-                    return false;
-                });
+                })
+                .ToList();
+            
+            foreach (var proc in procs)
+            {
+                try
+                {
+                    proc.Kill();
+                }
+                catch
+                {
+                    //Nothing
+                }
+            }
 
             try
             {
