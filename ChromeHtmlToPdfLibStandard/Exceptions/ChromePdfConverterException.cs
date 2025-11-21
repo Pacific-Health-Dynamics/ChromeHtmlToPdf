@@ -3,13 +3,9 @@ using System.Runtime.Serialization;
 
 namespace ChromeHtmlToPdfLib.Exceptions
 {
-    public abstract class ChromePdfConverterException : ApplicationException
+    public abstract class ChromePdfConverterException : Exception
     {
         protected ChromePdfConverterException()
-        {
-        }
-
-        protected ChromePdfConverterException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 

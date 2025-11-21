@@ -33,53 +33,42 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class PageEvent
     {
-        #region FromJson
+        /// <summary>
+        ///     The method executed by Chrome
+        /// </summary>
+        [JsonProperty("method")]
+        public string? Method { get; set; }
+
+        /// <summary>
+        ///     The parameters used with this <see cref="Method" />
+        /// </summary>
+        [JsonProperty("params")]
+        public Params? Params { get; set; }
+
 
         /// <summary>
         ///     Returns this object deserialized from the given <paramref name="json" /> string
         /// </summary>
         /// <param name="json"></param>
         /// <returns></returns>
-        public static PageEvent FromJson(string json)
+        public static PageEvent? FromJson(string json)
         {
             return JsonConvert.DeserializeObject<PageEvent>(json);
         }
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        ///     The method executed by Chrome
-        /// </summary>
-        [JsonProperty("method")]
-        public string Method { get; set; }
-
-        /// <summary>
-        ///     The parameters used with this <see cref="Method" />
-        /// </summary>
-        [JsonProperty("params")]
-        public Params Params { get; set; }
-
-        #endregion
     }
 
     public class Params
     {
-        #region Properties
-
         /// <summary>
         ///     The parameters name
         /// </summary>
         [JsonProperty("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         ///     The timestamp
         /// </summary>
         [JsonProperty("timestamp")]
         public long Timestamp { get; set; }
-
-        #endregion
     }
 }

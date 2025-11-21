@@ -27,16 +27,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using ChromeHtmlToPdfLib.Exceptions;
 
 namespace ChromeHtmlToPdfLib.Helpers
 {
     internal static class Extensions
     {
-        #region Contains
-
         /// <summary>
         ///     Returns <c>true</c> when the list containts the given <paramref name="source" />
         /// </summary>
@@ -53,29 +48,5 @@ namespace ChromeHtmlToPdfLib.Helpers
                 !string.IsNullOrEmpty(value) &&
                 source.Any(x => string.Compare(x, value, comparison) == 0);
         }
-
-        #endregion
-
-        #region Timeout
-
-        /// <summary>
-        ///     A timeout for a task
-        /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="task"></param>
-        /// <param name="timeout">The timeout in millisecons</param>
-        /// <returns></returns>
-        public static async Task<TResult> Timeout<TResult>(this Task<TResult> task, int timeout)
-        {
-            using (var timeoutCancellationTokenSource = new CancellationTokenSource())
-            {
-                var completedTask = await Task.WhenAny(task, Task.Delay(timeout, timeoutCancellationTokenSource.Token));
-                if (completedTask != task) throw new TaskTimedOutException("The task timed out");
-                timeoutCancellationTokenSource.Cancel();
-                return await task;
-            }
-        }
-
-        #endregion
     }
 }

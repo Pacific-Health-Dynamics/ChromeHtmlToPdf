@@ -1,79 +1,230 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.WebSockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ChromeHtmlToPdfLib.Exceptions;
 using ChromeHtmlToPdfLib.Protocol;
-using WebSocketSharp;
+using Microsoft.Extensions.Logging;
 
 namespace ChromeHtmlToPdfLib
 {
+    internal sealed class Event
+    {
+        public string? Message { get; set; }
+        public Exception? Error { get; set; }
+    }
+
     /// <summary>
     ///     A connection to a page (tab) in Chrome
     /// </summary>
-    internal class Connection : IDisposable
+    internal sealed class Connection : IDisposable
     {
-        #region Constructor
+        private readonly Dictionary<int, TaskCompletionSource<string>> _completionSources =
+            new Dictionary<int, TaskCompletionSource<string>>();
+
+        private readonly Dictionary<object, Action<Event>> _listeners = new Dictionary<object, Action<Event>>();
+        private readonly ILogger? _logger;
+        private readonly object _mutex;
+        private readonly CancellationTokenSource _source;
+        private readonly ClientWebSocket _ws;
+        private bool _disposed;
 
         /// <summary>
         ///     Makes this object and sets all it's needed properties
         /// </summary>
-        /// <param name="url">The url</param>
-        internal Connection(string targetId, string url)
+        internal Connection(string? targetId, string url, ILogger? logger)
         {
+            _mutex = this;
+            _source = new CancellationTokenSource();
+            _logger = logger;
             TargetId = targetId;
             Url = url;
-            WebSocket = new WebSocket(url)
-            {
-                EmitOnPing = false,
-                EnableRedirection = true,
-                Log = { Output = (_, __) => { } }
-            };
-
-            WebSocket.OnMessage += Websocket_OnMessage;
-            WebSocket.OnClose += Websocket_OnClose;
-            WebSocket.OnError += Websocket_OnError;
-            WebSocket.Connect();
+            _ws = new ClientWebSocket();
         }
 
-        #endregion
+        public string? TargetId { get; set; }
 
-        #region Dispose
+
+        /// <summary>
+        ///     Returns the websocket url
+        /// </summary>
+        private string Url { get; }
+
 
         /// <summary>
         ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         public void Dispose()
         {
-            WebSocket.OnMessage -= Websocket_OnMessage;
-            WebSocket.OnClose -= Websocket_OnClose;
-            WebSocket.OnError -= Websocket_OnError;
+            if (_disposed)
+                return;
+            try
+            {
+                lock (_mutex)
+                {
+                    _listeners.Clear();
+                    _source.Cancel();
+                    _source.Dispose();
+                    _ws.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Failed to dispose web socket. {ex.Message} {ex.StackTrace}");
+            }
 
-            //if (WebSocket.ReadyState == WebSocketState.Open)
-            //    WebSocket.Close();
+            _disposed = true;
         }
 
-        #endregion
+        public void AddMessageListener(object id, Action<Event> listener)
+        {
+            lock (_mutex)
+            {
+                if (!_listeners.ContainsKey(id))
+                    _listeners.Add(id, listener);
+            }
+        }
 
-        #region SendAsync
+        public bool RemoveMessageListener(object id)
+        {
+            lock (_mutex)
+            {
+                return _listeners.Remove(id);
+            }
+        }
+
+        private void Notify(Event message)
+        {
+            List<Action<Event>> actions;
+            lock (_mutex)
+            {
+                actions = _listeners.Values.ToList();
+            }
+
+            actions.ForEach(l =>
+            {
+                try
+                {
+                    l.Invoke(message);
+                }
+                catch (Exception lex)
+                {
+                    _logger?.LogError(lex, "Listener failed");
+                }
+            });
+        }
+
+        public async Task ConnectAsync(CancellationToken cancellationToken)
+        {
+            var token = _source.Token;
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, token);
+            await _ws.ConnectAsync(new Uri(Url), linked.Token);
+
+            Task unused = Task.Run<Task>(async () =>
+            {
+                try
+                {
+                    while (!token.IsCancellationRequested)
+                    {
+                        var stream = new MemoryStream();
+                        while (!token.IsCancellationRequested)
+                        {
+                            var buffer = new byte[2097152];
+                            var result = await _ws.ReceiveAsync(new ArraySegment<byte>(buffer), token);
+                            if (result.MessageType != WebSocketMessageType.Text)
+                                break;
+                            await stream.WriteAsync(buffer, 0, result.Count, token);
+                            _logger?.LogTrace($"Received {result.Count} bytes");
+                            if (result.EndOfMessage)
+                            {
+                                var str = Encoding.UTF8.GetString(stream.ToArray());
+                                _logger?.LogTrace($"Received message {str}");
+
+                                Notify(new Event
+                                {
+                                    Message = str
+                                });
+
+                                var baseMessage = MessageBase.FromJson(str);
+                                if (baseMessage != null)
+                                    lock (_mutex)
+                                    {
+                                        if (_completionSources.TryGetValue(baseMessage.Id, out var source))
+                                        {
+                                            _completionSources.Remove(baseMessage.Id);
+                                            source.SetResult(str);
+                                        }
+                                    }
+
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (!token.IsCancellationRequested)
+                    {
+                        _logger?.LogError($"Websocket reader closed: {ex.Message} {ex.StackTrace}");
+                        Notify(new Event
+                        {
+                            Message = null,
+                            Error = ex
+                        });
+                    }
+                }
+            }, token);
+        }
+
 
         /// <summary>
         ///     Sends a message asynchronously to the <see cref="WebSocket" />
         /// </summary>
-        internal Task<string> SendAsync(Message message, CancellationToken cancellationToken = default)
+        internal async Task<string> SendAsync(Message message, CancellationToken cancellationToken)
         {
-            return Task.Run(async () =>
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _source.Token);
+            var json = message.ToJson();
+            _logger?.LogTrace($"Sending message: '{json}'");
+            var completionSource = new TaskCompletionSource<string>();
+            lock (_completionSources)
             {
-                _messageId += 1;
-                message.Id = _messageId;
-                _response = new TaskCompletionSource<string>();
-                WebSocket.Send(message.ToJson());
-                return await _response.Task;
-            }, cancellationToken);
+                _completionSources.Add(message.Id, completionSource);
+            }
+
+            string? res = null;
+            await _ws.SendAsync(
+                new ArraySegment<byte>(Encoding.UTF8.GetBytes(json)),
+                WebSocketMessageType.Text,
+                true,
+                linked.Token);
+
+#if NET6_0_OR_GREATER
+            res = await completionSource.Task.WaitAsync(linked.Token);
+#else
+#pragma warning disable VSTHRD003
+            res = await Task.Run(async () => await completionSource.Task, linked.Token);
+#pragma warning restore VSTHRD003
+#endif
+            CheckForError(res);
+            return res;
         }
 
-        #endregion
+        internal async Task SendUnitAsync(Message message, CancellationToken cancellationToken)
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _source.Token);
+            var json = message.ToJson();
+            _logger?.LogTrace($"Sending message: '{json}'");
+            await _ws.SendAsync(
+                new ArraySegment<byte>(Encoding.UTF8.GetBytes(json)),
+                WebSocketMessageType.Text,
+                true,
+                linked.Token);
+        }
 
-        #region CheckForError
 
         /// <summary>
         ///     Checks if <paramref name="message" /> contains an error and if so raises an exception
@@ -83,79 +234,8 @@ namespace ChromeHtmlToPdfLib
         {
             var error = Error.FromJson(message);
             // ReSharper disable once CompareOfFloatsByEqualityOperator
-            if (error.InnerError != null && error.InnerError.Code != 0)
-                throw new ChromeException(error.InnerError.Message);
+            if (error?.InnerError != null && error.InnerError.Code != 0)
+                throw new ChromeException(error.InnerError.Message ?? "Chrome internal error");
         }
-
-        #endregion
-
-        #region Events
-
-        /// <summary>
-        ///     Triggered when a connection to the <see cref="WebSocket" /> is closed
-        /// </summary>
-        public event EventHandler Closed;
-
-        /// <summary>
-        ///     Triggered when a new message is received on the <see cref="WebSocket" />
-        /// </summary>
-        public event EventHandler<string> MessageReceived;
-
-        #endregion
-
-        #region Fields
-
-        private int _messageId;
-        private TaskCompletionSource<string> _response;
-
-        public string TargetId { get; set; }
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        ///     Returns the websocket url
-        /// </summary>
-        public string Url { get; set; }
-
-        /// <summary>
-        ///     The websocket
-        /// </summary>
-        public WebSocket WebSocket { get; set; }
-
-        #endregion
-
-        #region Websocket events
-
-        private void Websocket_OnError(object sender, ErrorEventArgs e)
-        {
-            if (_response.Task.Status != TaskStatus.RanToCompletion)
-                _response.SetResult(string.Empty);
-            throw new ChromeException(e.Message, e.Exception);
-        }
-
-        private void Websocket_OnClose(object sender, CloseEventArgs e)
-        {
-            if (_response.Task.Status != TaskStatus.RanToCompletion)
-                _response.SetResult(string.Empty);
-            Closed?.Invoke(this, e);
-        }
-
-        private void Websocket_OnMessage(object sender, MessageEventArgs e)
-        {
-            var response = e.Data;
-
-            CheckForError(response);
-
-            var messageBase = MessageBase.FromJson(response);
-
-            if (_messageId == messageBase.Id)
-                _response.SetResult(response);
-
-            MessageReceived?.Invoke(this, response);
-        }
-
-        #endregion
     }
 }

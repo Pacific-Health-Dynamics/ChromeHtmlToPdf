@@ -7,38 +7,26 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class Page : MessageBase
     {
-        #region Properties
-
         /// <summary>
         ///     The result
         /// </summary>
         [JsonProperty("result")]
-        public Result Result { get; set; }
+        public Result? Result { get; set; }
 
-        #endregion
-
-        #region FromJson
 
         /// <summary>
         ///     Returns this object deserialized from the given <paramref name="json" /> string
         /// </summary>
         /// <param name="json"></param>
         /// <returns></returns>
-        public new static Page FromJson(string json)
+        public new static Page? FromJson(string json)
         {
             return JsonConvert.DeserializeObject<Page>(json);
         }
-
-        #endregion
     }
 
     public class Result
     {
-        #region Propertie
-
-        [JsonProperty("targetId")]
-        public string TargetId { get; set; }
-
-        #endregion
+        [JsonProperty("targetId")] public string? TargetId { get; set; }
     }
 }

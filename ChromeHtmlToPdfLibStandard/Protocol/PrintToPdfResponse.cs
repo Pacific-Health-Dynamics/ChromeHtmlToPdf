@@ -34,34 +34,34 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class PrintToPdfResponse
     {
-        #region FromJson
+        /// <summary>
+        ///     <see cref="PrintToPdfResult" />
+        /// </summary>
+        [JsonProperty("result")]
+        public PrintToPdfResult? Result { get; set; }
+
+        /// <summary>
+        ///     Returns <see cref="PrintToPdfResult.Data" /> as array of bytes
+        /// </summary>
+        public byte[]? Bytes
+        {
+            get
+            {
+                var data = Result?.Data;
+                return data == null ? null : Convert.FromBase64String(data);
+            }
+        }
+
 
         /// <summary>
         ///     Returns this object deserialized from the given <paramref name="json" /> string
         /// </summary>
         /// <param name="json"></param>
         /// <returns></returns>
-        public static PrintToPdfResponse FromJson(string json)
+        public static PrintToPdfResponse? FromJson(string json)
         {
             return JsonConvert.DeserializeObject<PrintToPdfResponse>(json);
         }
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        ///     <see cref="PrintToPdfResult" />
-        /// </summary>
-        [JsonProperty("result")]
-        public PrintToPdfResult Result { get; set; }
-
-        /// <summary>
-        ///     Returns <see cref="PrintToPdfResult.Data" /> as array of bytes
-        /// </summary>
-        public byte[] Bytes => Convert.FromBase64String(Result.Data);
-
-        #endregion
     }
 
     /// <summary>
@@ -69,14 +69,10 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class PrintToPdfResult
     {
-        #region Properties
-
         /// <summary>
         ///     The PDF as base64 string
         /// </summary>
         [JsonProperty("data")]
-        public string Data { get; set; }
-
-        #endregion
+        public string? Data { get; set; }
     }
 }

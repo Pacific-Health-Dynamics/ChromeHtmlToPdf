@@ -25,6 +25,7 @@
 //
 
 using System.Collections.Generic;
+using System.Threading;
 using Newtonsoft.Json;
 
 namespace ChromeHtmlToPdfLib.Protocol
@@ -34,20 +35,32 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class Message : MessageBase
     {
-        #region Constructor
+        private static int _messageIdCounter;
 
         /// <summary>
         ///     Creates this object and sets it's needed properties
         /// </summary>
-        public Message()
+        public Message(string method)
         {
-            Id = 1;
+            Interlocked.Add(ref _messageIdCounter, 1);
+            Id = _messageIdCounter;
             Parameters = new Dictionary<string, object>();
+            Method = method;
         }
 
-        #endregion
 
-        #region AddParaneter
+        /// <summary>
+        ///     The method executed by Chrome
+        /// </summary>
+        [JsonProperty("method")]
+        public string Method { get; }
+
+        /// <summary>
+        ///     The parameters that we want to feed into Chrome
+        /// </summary>
+        [JsonProperty("params")]
+        public Dictionary<string, object> Parameters { get; set; }
+
 
         /// <summary>
         ///     Add's a parameter to <see cref="Parameters" />
@@ -58,23 +71,5 @@ namespace ChromeHtmlToPdfLib.Protocol
         {
             Parameters.Add(name, value);
         }
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        ///     The method executed by Chrome
-        /// </summary>
-        [JsonProperty("method")]
-        public string Method { get; set; }
-
-        /// <summary>
-        ///     The parameters that we want to feed into Chrome
-        /// </summary>
-        [JsonProperty("params")]
-        public Dictionary<string, object> Parameters { get; set; }
-
-        #endregion
     }
 }

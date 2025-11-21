@@ -36,17 +36,13 @@ namespace ChromeHtmlToPdfLib.Exceptions
     [Serializable]
     public class ChromeException : ChromePdfConverterException
     {
-        protected ChromeException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
-
         public ChromeException()
         {
         }
 
-        public ChromeException(Error error) : base(error.InnerError.Message)
+        public ChromeException(Error error) : base(error.InnerError?.Message ?? "Chrome internal error")
         {
-            Code = error.InnerError.Code;
+            Code = error.InnerError?.Code ?? 0;
         }
 
         public ChromeException(string message) : base(message)

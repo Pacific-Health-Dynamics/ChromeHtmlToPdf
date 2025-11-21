@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Reflection;
 
 namespace ChromeHtmlToPdfLib.Helpers
 {
@@ -9,8 +7,6 @@ namespace ChromeHtmlToPdfLib.Helpers
     /// </summary>
     public static class ExceptionHelpers
     {
-        #region GetInnerException
-
         /// <summary>
         ///     Returns the full exception with it's inner exceptions as a string
         /// </summary>
@@ -26,7 +22,5 @@ namespace ChromeHtmlToPdfLib.Helpers
                 result += GetInnerException(exception.InnerException);
             return result;
         }
-
-        #endregion
     }
 }

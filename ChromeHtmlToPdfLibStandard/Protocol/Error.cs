@@ -33,29 +33,22 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class Error : MessageBase
     {
-        #region Properties
-
         /// <summary>
         ///     <see cref="InnerError" />
         /// </summary>
         [JsonProperty("error")]
-        public InnerError InnerError { get; set; }
+        public InnerError? InnerError { get; set; }
 
-        #endregion
-
-        #region FromJson
 
         /// <summary>
         ///     Returns this object deserialized from the given <paramref name="json" /> string
         /// </summary>
         /// <param name="json"></param>
         /// <returns></returns>
-        public new static Error FromJson(string json)
+        public new static Error? FromJson(string json)
         {
             return JsonConvert.DeserializeObject<Error>(json);
         }
-
-        #endregion
     }
 
     /// <summary>
@@ -63,8 +56,6 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class InnerError
     {
-        #region Properties
-
         /// <summary>
         ///     The error code
         /// </summary>
@@ -75,8 +66,6 @@ namespace ChromeHtmlToPdfLib.Protocol
         ///     The error message
         /// </summary>
         [JsonProperty("message")]
-        public string Message { get; set; }
-
-        #endregion
+        public string? Message { get; set; }
     }
 }

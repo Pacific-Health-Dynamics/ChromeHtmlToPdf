@@ -33,29 +33,22 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class Expression : MessageBase
     {
-        #region Properties
-
         /// <summary>
         ///     <see cref="ExpressionResult" />
         /// </summary>
         [JsonProperty("result")]
-        public ExpressionResult Result { get; set; }
+        public ExpressionResult? Result { get; set; }
 
-        #endregion
-
-        #region FromJson
 
         /// <summary>
         ///     Returns this object deserialized from the given <paramref name="json" /> string
         /// </summary>
         /// <param name="json"></param>
         /// <returns></returns>
-        public new static Expression FromJson(string json)
+        public new static Expression? FromJson(string json)
         {
             return JsonConvert.DeserializeObject<Expression>(json);
         }
-
-        #endregion
     }
 
     /// <summary>
@@ -63,21 +56,17 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class ExpressionResult
     {
-        #region Properties
-
         /// <summary>
         ///     Returns an object when an exception occurs when Chrome evaluated the given epxression
         /// </summary>
         [JsonProperty("exceptionDetails")]
-        public ExceptionDetails ExceptionDetails { get; set; }
+        public ExceptionDetails? ExceptionDetails { get; set; }
 
         /// <summary>
         ///     Returns the results for the given expression
         /// </summary>
         [JsonProperty("result")]
-        public ExpressionInnerResult InnerResult { get; set; }
-
-        #endregion
+        public ExpressionInnerResult? InnerResult { get; set; }
     }
 
     /// <summary>
@@ -85,8 +74,6 @@ namespace ChromeHtmlToPdfLib.Protocol
     /// </summary>
     public class ExceptionDetails
     {
-        #region Properties
-
         /// <summary>
         ///     The column number where the exception occured
         /// </summary>
@@ -97,7 +84,7 @@ namespace ChromeHtmlToPdfLib.Protocol
         ///     <see cref="ExpressionInnerResult" />
         /// </summary>
         [JsonProperty("exception")]
-        public ExpressionInnerResult Exception { get; set; }
+        public ExpressionInnerResult? Exception { get; set; }
 
         /// <summary>
         ///     The exception id
@@ -115,39 +102,27 @@ namespace ChromeHtmlToPdfLib.Protocol
         ///     The script <see cref="MessageBase.Id" />
         /// </summary>
         [JsonProperty("scriptId")]
-        public string ScriptId { get; set; }
+        public string? ScriptId { get; set; }
 
         /// <summary>
         ///     The text
         /// </summary>
         [JsonProperty("text")]
-        public string Text { get; set; }
-
-        #endregion
+        public string? Text { get; set; }
     }
 
     public class ExpressionInnerResult
     {
-        #region Properties
+        [JsonProperty("className")] public string? ClassName { get; set; }
 
-        [JsonProperty("className")]
-        public string ClassName { get; set; }
+        [JsonProperty("description")] public string? Description { get; set; }
 
-        [JsonProperty("description")]
-        public string Description { get; set; }
+        [JsonProperty("objectId")] public string? ObjectId { get; set; }
 
-        [JsonProperty("objectId")]
-        public string ObjectId { get; set; }
+        [JsonProperty("subtype")] public string? Subtype { get; set; }
 
-        [JsonProperty("subtype")]
-        public string Subtype { get; set; }
+        [JsonProperty("type")] public string? Type { get; set; }
 
-        [JsonProperty("type")]
-        public string Type { get; set; }
-
-        [JsonProperty("value")]
-        public string Value { get; set; }
-
-        #endregion
+        [JsonProperty("value")] public string? Value { get; set; }
     }
 }

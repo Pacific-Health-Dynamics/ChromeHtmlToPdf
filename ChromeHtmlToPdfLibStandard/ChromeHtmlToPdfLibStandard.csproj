@@ -1,19 +1,36 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <AssemblyName>ChromeHtmlToPdfLib</AssemblyName>
-    <RootNamespace>ChromeHtmlToPdfLib</RootNamespace>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>1.0.0-preview1</PackageVersion>
-    <PackageProjectUrl>https://github.com/rm3dom/ChromeHtmlToPdf</PackageProjectUrl>
-  </PropertyGroup>
+    <PropertyGroup>
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+        <CodeAnalysisTreatWarningsAsErrors>false</CodeAnalysisTreatWarningsAsErrors>
+        <AssemblyName>ChromeHtmlToPdfLib</AssemblyName>
+        <RootNamespace>ChromeHtmlToPdfLib</RootNamespace>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageVersion>1.0.0-preview1</PackageVersion>
+        <PackageProjectUrl>https://github.com/rm3dom/ChromeHtmlToPdf</PackageProjectUrl>
+        <Nullable>enable</Nullable>
+        <LangVersion>8</LangVersion>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+        <NoWarn>
+            CA1848 <!-- For improved performance, use the LoggerMessage delegates -->,
+            CA2007 <!-- Consider calling ConfigureAwait on the awaited task -->,
+        </NoWarn>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="WebSocketSharp-netstandard" Version="1.0.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Lindhart.Analyser.MissingAwaitWarning" Version="2.0.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0"/>
+    </ItemGroup>
 
 </Project>
