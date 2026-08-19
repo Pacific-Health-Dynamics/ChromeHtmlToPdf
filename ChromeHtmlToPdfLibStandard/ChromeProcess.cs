@@ -101,8 +101,10 @@ namespace ChromeHtmlToPdfLib
         /// </summary>
         //private WebProxy _webProxy;
         public ILogger? Logger { get; set; }
+        
+        public static int GetMaxTabs => int.TryParse(Environment.GetEnvironmentVariable("CHROME_MAX_TABS") ?? "4", out var maxTabs) ? maxTabs : 4;
 
-        public SemaphoreSlim Sem { get; } = new SemaphoreSlim(4, 4);
+        public SemaphoreSlim Sem { get; } = new SemaphoreSlim(GetMaxTabs, GetMaxTabs);
 
         /// <summary>
         ///     Optional path to the chrome executable;
@@ -263,6 +265,7 @@ namespace ChromeHtmlToPdfLib
             SetDefaultArgument("--safebrowsing-disable-auto-update");
             //You can disable this, but when running in a container you need either this or docker run --cap-add=SYS_ADMIN
             SetDefaultArgument("--no-sandbox");
+            SetDefaultArgument("--disable-dev-shm-usage");
             SetDefaultArgument("--remote-debugging-port", "0");
             SetWindowSize(WindowSize.HD_1366_768);
         }
