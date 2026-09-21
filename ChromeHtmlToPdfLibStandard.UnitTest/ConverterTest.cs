@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -33,6 +34,31 @@ public class ConverterTest
         _htmlFileContent = File.ReadAllText(Path.Combine(testFileDir, "Test.html"), Encoding.Default);
         _xmlFileContent = File.ReadAllText(Path.Combine(testFileDir, "Test.xml"), Encoding.Default);
         _textFileContent = File.ReadAllText(Path.Combine(testFileDir, "Test.txt"), Encoding.Default);
+    }
+
+    [Fact]
+    public void TestProcessKilledOnDispose()
+    {
+        int pid;
+        using (var chrome = new ChromeProcess())
+        {
+            chrome.EnsureRunning();
+            Assert.NotNull(chrome.ProcessId);
+            pid = chrome.ProcessId.Value;
+
+            using var proc = Process.GetProcessById(pid);
+            Assert.False(proc.HasExited);
+        }
+
+        try
+        {
+            using var proc = Process.GetProcessById(pid);
+            Assert.True(proc.HasExited);
+        }
+        catch (ArgumentException)
+        {
+            // Process does not exist anymore
+        }
     }
 
     [Fact]

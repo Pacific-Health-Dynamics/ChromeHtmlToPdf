@@ -34,136 +34,135 @@ using Microsoft.Extensions.Logging;
 
 // ReSharper disable UnusedMember.Global
 
-namespace ChromeHtmlToPdfLib
+namespace ChromeHtmlToPdfLib;
+
+/// <summary>
+///     A converter class around Google Chrome headless to convert html to pdf.
+///     You need to create a Converter for every Thread you are running or one per conversion.
+/// </summary>
+public sealed class Converter : IDisposable
 {
+    private readonly ChromeProcess _chrome;
+
     /// <summary>
-    ///     A converter class around Google Chrome headless to convert html to pdf.
-    ///     You need to create a Converter for every Thread you are running or one per conversion.
+    ///     When set then logging is written to this stream
     /// </summary>
-    public sealed class Converter : IDisposable
+    private readonly ILogger? _logger;
+
+    /// <summary>
+    ///     Handles the communication with Chrome dev tools, this will be null if chrome has not started yet.
+    /// </summary>
+    private Browser? _browser;
+
+    /// <summary>
+    ///     Keeps track is we already disposed our resources
+    /// </summary>
+    private bool _disposed;
+
+    /// <summary>
+    ///     When set then this folder is used for temporary files
+    /// </summary>
+    private string? _tempDirectory;
+
+
+    /// <summary>
+    ///     Creates this object and sets it's needed properties
+    /// </summary>
+    public Converter(ChromeProcess chrome, ILogger? logger = null)
     {
-        /// <summary>
-        ///     When set then logging is written to this stream
-        /// </summary>
-        private readonly ILogger? _logger;
-
-        /// <summary>
-        ///     Handles the communication with Chrome dev tools, this will be null if chrome has not started yet.
-        /// </summary>
-        private Browser? _browser;
-
-        private readonly ChromeProcess _chrome;
-
-        /// <summary>
-        ///     Keeps track is we already disposed our resources
-        /// </summary>
-        private bool _disposed;
-
-        /// <summary>
-        ///     When set then this folder is used for temporary files
-        /// </summary>
-        private string? _tempDirectory;
+        chrome.EnsureRunning();
+        _chrome = chrome;
+        _logger = logger;
+    }
 
 
-        /// <summary>
-        ///     Creates this object and sets it's needed properties
-        /// </summary>
-        public Converter(ChromeProcess chrome, ILogger? logger = null)
+    /// <summary>
+    ///     When set then this directory is used to store temporary files.
+    /// </summary>
+    /// <exception cref="DirectoryNotFoundException">Raised when the given directory does not exists</exception>
+    public string? TempDirectory
+    {
+        get => _tempDirectory;
+        set
         {
-            chrome.EnsureRunning();
-            _chrome = chrome;
-            _logger = logger;
+            if (!Directory.Exists(value))
+                throw new DirectoryNotFoundException($"The directory '{value}' does not exists");
+
+            _tempDirectory = value;
         }
+    }
 
 
-        /// <summary>
-        ///     When set then this directory is used to store temporary files.
-        /// </summary>
-        /// <exception cref="DirectoryNotFoundException">Raised when the given directory does not exists</exception>
-        public string? TempDirectory
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _browser?.Dispose();
+        _browser = null;
+    }
+
+    /// <summary>
+    ///     Destructor
+    /// </summary>
+    ~Converter()
+    {
+        Dispose();
+    }
+
+
+    /// <summary>
+    ///     Converts the given <paramref name="inputUri" /> to PDF
+    /// </summary>
+    public async Task ConvertToPdfAsync(ConvertUri inputUri,
+        Stream outputStream,
+        PageSettings pageSettings,
+        CancellationToken cancellationToken)
+    {
+        await _chrome.Sem.WaitAsync(cancellationToken);
+        try
         {
-            get => _tempDirectory;
-            set
-            {
-                if (!Directory.Exists(value))
-                    throw new DirectoryNotFoundException($"The directory '{value}' does not exists");
+            _browser = new Browser(_chrome.InstanceHandle ?? throw new Exception("InstanceHandle is null"),
+                _logger);
+            _logger?.LogTrace("Connecting to chrome...");
+            await _browser.ConnectAsync(cancellationToken);
+            _logger?.LogTrace("Connected");
 
-                _tempDirectory = value;
-            }
+            if (inputUri.IsFile)
+                if (!File.Exists(inputUri.OriginalString))
+                    throw new FileNotFoundException($"The file '{inputUri.OriginalString}' does not exists");
+
+
+            _logger?.LogTrace(
+                "Loading " + (inputUri.IsFile ? "file " + inputUri.OriginalString : "url " + inputUri));
+
+            await _browser.NavigateToAsync(inputUri, cancellationToken);
+
+            var result = (await _browser.PrintToPdfAsync(pageSettings, cancellationToken))?.Bytes ??
+                         throw new Exception("Failed to convert, no result");
+
+            await outputStream.WriteAsync(result, 0, result.Length, cancellationToken);
+            await outputStream.FlushAsync(cancellationToken);
+            _logger?.LogTrace("Converted");
         }
-
-
-        public void Dispose()
+        catch (Exception exception)
         {
-            if (_disposed) return;
-            _disposed = true;
-            _browser?.Dispose();
-            _browser = null;
+            _logger?.LogError($"Error: {ExceptionHelpers.GetInnerException(exception)}'");
+            throw;
         }
-
-        /// <summary>
-        ///     Destructor
-        /// </summary>
-        ~Converter()
+        finally
         {
-            Dispose();
+            _chrome.Sem.Release();
         }
+    }
 
-
-        /// <summary>
-        ///     Converts the given <paramref name="inputUri" /> to PDF
-        /// </summary>
-        public async Task ConvertToPdfAsync(ConvertUri inputUri,
-            Stream outputStream,
-            PageSettings pageSettings,
-            CancellationToken cancellationToken)
-        {
-            await _chrome.Sem.WaitAsync(cancellationToken);
-            try
-            {
-                _browser = new Browser(_chrome.InstanceHandle ?? throw new Exception("InstanceHandle is null"),
-                    _logger);
-                _logger?.LogTrace("Connecting to chrome...");
-                await _browser.ConnectAsync(cancellationToken);
-                _logger?.LogTrace("Connected");
-
-                if (inputUri.IsFile)
-                    if (!File.Exists(inputUri.OriginalString))
-                        throw new FileNotFoundException($"The file '{inputUri.OriginalString}' does not exists");
-
-
-                _logger?.LogTrace(
-                    "Loading " + (inputUri.IsFile ? "file " + inputUri.OriginalString : "url " + inputUri));
-
-                await _browser.NavigateToAsync(inputUri, cancellationToken);
-
-                var result = (await _browser.PrintToPdfAsync(pageSettings, cancellationToken))?.Bytes ??
-                             throw new Exception("Failed to convert, no result");
-
-                await outputStream.WriteAsync(result, 0, result.Length, cancellationToken);
-                await outputStream.FlushAsync(cancellationToken);
-                _logger?.LogTrace("Converted");
-            }
-            catch (Exception exception)
-            {
-                _logger?.LogError($"Error: {ExceptionHelpers.GetInnerException(exception)}'");
-                throw;
-            }
-            finally
-            {
-                _chrome.Sem.Release();
-            }
-        }
-
-        [Obsolete("Use ConvertToPdfAsync instead")]
-        public void ConvertToPdf(ConvertUri inputUri,
-            Stream outputStream,
-            PageSettings pageSettings,
-            CancellationToken cancellationToken = default)
-        {
+    [Obsolete("Use ConvertToPdfAsync instead")]
+    public void ConvertToPdf(ConvertUri inputUri,
+        Stream outputStream,
+        PageSettings pageSettings,
+        CancellationToken cancellationToken = default)
+    {
 #pragma warning disable VSTHRD002
-            ConvertToPdfAsync(inputUri, outputStream, pageSettings, cancellationToken).Wait(cancellationToken);
+        ConvertToPdfAsync(inputUri, outputStream, pageSettings, cancellationToken).Wait(cancellationToken);
 #pragma warning restore VSTHRD002
-        }
     }
 }

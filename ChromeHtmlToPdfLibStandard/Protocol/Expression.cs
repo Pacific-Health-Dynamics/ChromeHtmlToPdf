@@ -26,103 +26,102 @@
 
 using Newtonsoft.Json;
 
-namespace ChromeHtmlToPdfLib.Protocol
+namespace ChromeHtmlToPdfLib.Protocol;
+
+/// <summary>
+///     The JSON structure that is returned from Chrome when an expression is evaluated
+/// </summary>
+public class Expression : MessageBase
 {
     /// <summary>
-    ///     The JSON structure that is returned from Chrome when an expression is evaluated
+    ///     <see cref="ExpressionResult" />
     /// </summary>
-    public class Expression : MessageBase
-    {
-        /// <summary>
-        ///     <see cref="ExpressionResult" />
-        /// </summary>
-        [JsonProperty("result")]
-        public ExpressionResult? Result { get; set; }
+    [JsonProperty("result")]
+    public ExpressionResult? Result { get; set; }
 
-
-        /// <summary>
-        ///     Returns this object deserialized from the given <paramref name="json" /> string
-        /// </summary>
-        /// <param name="json"></param>
-        /// <returns></returns>
-        public new static Expression? FromJson(string json)
-        {
-            return JsonConvert.DeserializeObject<Expression>(json);
-        }
-    }
 
     /// <summary>
-    ///     The result for an expression
+    ///     Returns this object deserialized from the given <paramref name="json" /> string
     /// </summary>
-    public class ExpressionResult
+    /// <param name="json"></param>
+    /// <returns></returns>
+    public new static Expression? FromJson(string json)
     {
-        /// <summary>
-        ///     Returns an object when an exception occurs when Chrome evaluated the given epxression
-        /// </summary>
-        [JsonProperty("exceptionDetails")]
-        public ExceptionDetails? ExceptionDetails { get; set; }
-
-        /// <summary>
-        ///     Returns the results for the given expression
-        /// </summary>
-        [JsonProperty("result")]
-        public ExpressionInnerResult? InnerResult { get; set; }
+        return JsonConvert.DeserializeObject<Expression>(json);
     }
+}
+
+/// <summary>
+///     The result for an expression
+/// </summary>
+public class ExpressionResult
+{
+    /// <summary>
+    ///     Returns an object when an exception occurs when Chrome evaluated the given epxression
+    /// </summary>
+    [JsonProperty("exceptionDetails")]
+    public ExceptionDetails? ExceptionDetails { get; set; }
 
     /// <summary>
-    ///     The exact exception details for the expression that is sent to Chrome
+    ///     Returns the results for the given expression
     /// </summary>
-    public class ExceptionDetails
-    {
-        /// <summary>
-        ///     The column number where the exception occured
-        /// </summary>
-        [JsonProperty("columnNumber")]
-        public long ColumnNumber { get; set; }
+    [JsonProperty("result")]
+    public ExpressionInnerResult? InnerResult { get; set; }
+}
 
-        /// <summary>
-        ///     <see cref="ExpressionInnerResult" />
-        /// </summary>
-        [JsonProperty("exception")]
-        public ExpressionInnerResult? Exception { get; set; }
+/// <summary>
+///     The exact exception details for the expression that is sent to Chrome
+/// </summary>
+public class ExceptionDetails
+{
+    /// <summary>
+    ///     The column number where the exception occured
+    /// </summary>
+    [JsonProperty("columnNumber")]
+    public long ColumnNumber { get; set; }
 
-        /// <summary>
-        ///     The exception id
-        /// </summary>
-        [JsonProperty("exceptionId")]
-        public long ExceptionId { get; set; }
+    /// <summary>
+    ///     <see cref="ExpressionInnerResult" />
+    /// </summary>
+    [JsonProperty("exception")]
+    public ExpressionInnerResult? Exception { get; set; }
 
-        /// <summary>
-        ///     The line number where the exception occured
-        /// </summary>
-        [JsonProperty("lineNumber")]
-        public long LineNumber { get; set; }
+    /// <summary>
+    ///     The exception id
+    /// </summary>
+    [JsonProperty("exceptionId")]
+    public long ExceptionId { get; set; }
 
-        /// <summary>
-        ///     The script <see cref="MessageBase.Id" />
-        /// </summary>
-        [JsonProperty("scriptId")]
-        public string? ScriptId { get; set; }
+    /// <summary>
+    ///     The line number where the exception occured
+    /// </summary>
+    [JsonProperty("lineNumber")]
+    public long LineNumber { get; set; }
 
-        /// <summary>
-        ///     The text
-        /// </summary>
-        [JsonProperty("text")]
-        public string? Text { get; set; }
-    }
+    /// <summary>
+    ///     The script <see cref="MessageBase.Id" />
+    /// </summary>
+    [JsonProperty("scriptId")]
+    public string? ScriptId { get; set; }
 
-    public class ExpressionInnerResult
-    {
-        [JsonProperty("className")] public string? ClassName { get; set; }
+    /// <summary>
+    ///     The text
+    /// </summary>
+    [JsonProperty("text")]
+    public string? Text { get; set; }
+}
 
-        [JsonProperty("description")] public string? Description { get; set; }
+public class ExpressionInnerResult
+{
+    [JsonProperty("className")] public string? ClassName { get; set; }
 
-        [JsonProperty("objectId")] public string? ObjectId { get; set; }
+    [JsonProperty("description")] public string? Description { get; set; }
 
-        [JsonProperty("subtype")] public string? Subtype { get; set; }
+    [JsonProperty("objectId")] public string? ObjectId { get; set; }
 
-        [JsonProperty("type")] public string? Type { get; set; }
+    [JsonProperty("subtype")] public string? Subtype { get; set; }
 
-        [JsonProperty("value")] public string? Value { get; set; }
-    }
+    [JsonProperty("type")] public string? Type { get; set; }
+
+    [JsonProperty("value")] public string? Value { get; set; }
 }

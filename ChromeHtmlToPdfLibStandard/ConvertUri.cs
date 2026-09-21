@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace ChromeHtmlToPdfLib
+namespace ChromeHtmlToPdfLib;
+
+/// <summary>
+///     <inheritdoc cref="Uri" />
+/// </summary>
+public class ConvertUri : Uri
 {
-    /// <summary>
-    ///     <inheritdoc cref="Uri" />
-    /// </summary>
-    public class ConvertUri : Uri
+    public ConvertUri(string uriString) : base(uriString)
     {
-        public ConvertUri(string uriString) : base(uriString)
-        {
-        }
     }
 }

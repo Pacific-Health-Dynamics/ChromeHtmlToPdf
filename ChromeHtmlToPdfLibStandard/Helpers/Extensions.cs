@@ -28,25 +28,24 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace ChromeHtmlToPdfLib.Helpers
+namespace ChromeHtmlToPdfLib.Helpers;
+
+internal static class Extensions
 {
-    internal static class Extensions
+    /// <summary>
+    ///     Returns <c>true</c> when the list containts the given <paramref name="source" />
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="value">The value to check if it exists in the list</param>
+    /// <param name="comparison">
+    ///     <see cref="StringComparison" />
+    /// </param>
+    /// <returns></returns>
+    public static bool Contains(this List<string> source, string value, StringComparison comparison)
     {
-        /// <summary>
-        ///     Returns <c>true</c> when the list containts the given <paramref name="source" />
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="value">The value to check if it exists in the list</param>
-        /// <param name="comparison">
-        ///     <see cref="StringComparison" />
-        /// </param>
-        /// <returns></returns>
-        public static bool Contains(this List<string> source, string value, StringComparison comparison)
-        {
-            return
-                source != null &&
-                !string.IsNullOrEmpty(value) &&
-                source.Any(x => string.Compare(x, value, comparison) == 0);
-        }
+        return
+            source != null &&
+            !string.IsNullOrEmpty(value) &&
+            source.Any(x => string.Compare(x, value, comparison) == 0);
     }
 }

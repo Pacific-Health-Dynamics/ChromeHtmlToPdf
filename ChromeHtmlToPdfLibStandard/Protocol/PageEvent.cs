@@ -26,49 +26,48 @@
 
 using Newtonsoft.Json;
 
-namespace ChromeHtmlToPdfLib.Protocol
+namespace ChromeHtmlToPdfLib.Protocol;
+
+/// <summary>
+///     The JSON object that is returned when we asked Chrome to send page events
+/// </summary>
+public class PageEvent
 {
     /// <summary>
-    ///     The JSON object that is returned when we asked Chrome to send page events
+    ///     The method executed by Chrome
     /// </summary>
-    public class PageEvent
+    [JsonProperty("method")]
+    public string? Method { get; set; }
+
+    /// <summary>
+    ///     The parameters used with this <see cref="Method" />
+    /// </summary>
+    [JsonProperty("params")]
+    public Params? Params { get; set; }
+
+
+    /// <summary>
+    ///     Returns this object deserialized from the given <paramref name="json" /> string
+    /// </summary>
+    /// <param name="json"></param>
+    /// <returns></returns>
+    public static PageEvent? FromJson(string json)
     {
-        /// <summary>
-        ///     The method executed by Chrome
-        /// </summary>
-        [JsonProperty("method")]
-        public string? Method { get; set; }
-
-        /// <summary>
-        ///     The parameters used with this <see cref="Method" />
-        /// </summary>
-        [JsonProperty("params")]
-        public Params? Params { get; set; }
-
-
-        /// <summary>
-        ///     Returns this object deserialized from the given <paramref name="json" /> string
-        /// </summary>
-        /// <param name="json"></param>
-        /// <returns></returns>
-        public static PageEvent? FromJson(string json)
-        {
-            return JsonConvert.DeserializeObject<PageEvent>(json);
-        }
+        return JsonConvert.DeserializeObject<PageEvent>(json);
     }
+}
 
-    public class Params
-    {
-        /// <summary>
-        ///     The parameters name
-        /// </summary>
-        [JsonProperty("name")]
-        public string? Name { get; set; }
+public class Params
+{
+    /// <summary>
+    ///     The parameters name
+    /// </summary>
+    [JsonProperty("name")]
+    public string? Name { get; set; }
 
-        /// <summary>
-        ///     The timestamp
-        /// </summary>
-        [JsonProperty("timestamp")]
-        public long Timestamp { get; set; }
-    }
+    /// <summary>
+    ///     The timestamp
+    /// </summary>
+    [JsonProperty("timestamp")]
+    public long Timestamp { get; set; }
 }

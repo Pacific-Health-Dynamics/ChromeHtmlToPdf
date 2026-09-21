@@ -28,48 +28,47 @@ using System.Collections.Generic;
 using System.Threading;
 using Newtonsoft.Json;
 
-namespace ChromeHtmlToPdfLib.Protocol
+namespace ChromeHtmlToPdfLib.Protocol;
+
+/// <summary>
+///     The JSON message that is sent to Chrome
+/// </summary>
+public class Message : MessageBase
 {
+    private static int _messageIdCounter;
+
     /// <summary>
-    ///     The JSON message that is sent to Chrome
+    ///     Creates this object and sets it's needed properties
     /// </summary>
-    public class Message : MessageBase
+    public Message(string method)
     {
-        private static int _messageIdCounter;
-
-        /// <summary>
-        ///     Creates this object and sets it's needed properties
-        /// </summary>
-        public Message(string method)
-        {
-            Interlocked.Add(ref _messageIdCounter, 1);
-            Id = _messageIdCounter;
-            Parameters = new Dictionary<string, object>();
-            Method = method;
-        }
+        Interlocked.Add(ref _messageIdCounter, 1);
+        Id = _messageIdCounter;
+        Parameters = new Dictionary<string, object>();
+        Method = method;
+    }
 
 
-        /// <summary>
-        ///     The method executed by Chrome
-        /// </summary>
-        [JsonProperty("method")]
-        public string Method { get; }
+    /// <summary>
+    ///     The method executed by Chrome
+    /// </summary>
+    [JsonProperty("method")]
+    public string Method { get; }
 
-        /// <summary>
-        ///     The parameters that we want to feed into Chrome
-        /// </summary>
-        [JsonProperty("params")]
-        public Dictionary<string, object> Parameters { get; set; }
+    /// <summary>
+    ///     The parameters that we want to feed into Chrome
+    /// </summary>
+    [JsonProperty("params")]
+    public Dictionary<string, object> Parameters { get; set; }
 
 
-        /// <summary>
-        ///     Add's a parameter to <see cref="Parameters" />
-        /// </summary>
-        /// <param name="name">The name</param>
-        /// <param name="value">The value</param>
-        public void AddParameter(string name, object value)
-        {
-            Parameters.Add(name, value);
-        }
+    /// <summary>
+    ///     Add's a parameter to <see cref="Parameters" />
+    /// </summary>
+    /// <param name="name">The name</param>
+    /// <param name="value">The value</param>
+    public void AddParameter(string name, object value)
+    {
+        Parameters.Add(name, value);
     }
 }

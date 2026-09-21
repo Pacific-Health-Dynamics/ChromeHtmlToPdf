@@ -27,52 +27,51 @@
 using System;
 using Newtonsoft.Json;
 
-namespace ChromeHtmlToPdfLib.Protocol
+namespace ChromeHtmlToPdfLib.Protocol;
+
+/// <summary>
+///     The JSON object that is returned from Chrome when calling the <see cref="Converter" /> ConvertToPdf method
+/// </summary>
+public class PrintToPdfResponse
 {
     /// <summary>
-    ///     The JSON object that is returned from Chrome when calling the <see cref="Converter" /> ConvertToPdf method
+    ///     <see cref="PrintToPdfResult" />
     /// </summary>
-    public class PrintToPdfResponse
-    {
-        /// <summary>
-        ///     <see cref="PrintToPdfResult" />
-        /// </summary>
-        [JsonProperty("result")]
-        public PrintToPdfResult? Result { get; set; }
-
-        /// <summary>
-        ///     Returns <see cref="PrintToPdfResult.Data" /> as array of bytes
-        /// </summary>
-        public byte[]? Bytes
-        {
-            get
-            {
-                var data = Result?.Data;
-                return data == null ? null : Convert.FromBase64String(data);
-            }
-        }
-
-
-        /// <summary>
-        ///     Returns this object deserialized from the given <paramref name="json" /> string
-        /// </summary>
-        /// <param name="json"></param>
-        /// <returns></returns>
-        public static PrintToPdfResponse? FromJson(string json)
-        {
-            return JsonConvert.DeserializeObject<PrintToPdfResponse>(json);
-        }
-    }
+    [JsonProperty("result")]
+    public PrintToPdfResult? Result { get; set; }
 
     /// <summary>
-    ///     The result returned from the <see cref="Converter" /> ConvertToPdf  method
+    ///     Returns <see cref="PrintToPdfResult.Data" /> as array of bytes
     /// </summary>
-    public class PrintToPdfResult
+    public byte[]? Bytes
     {
-        /// <summary>
-        ///     The PDF as base64 string
-        /// </summary>
-        [JsonProperty("data")]
-        public string? Data { get; set; }
+        get
+        {
+            var data = Result?.Data;
+            return data == null ? null : Convert.FromBase64String(data);
+        }
     }
+
+
+    /// <summary>
+    ///     Returns this object deserialized from the given <paramref name="json" /> string
+    /// </summary>
+    /// <param name="json"></param>
+    /// <returns></returns>
+    public static PrintToPdfResponse? FromJson(string json)
+    {
+        return JsonConvert.DeserializeObject<PrintToPdfResponse>(json);
+    }
+}
+
+/// <summary>
+///     The result returned from the <see cref="Converter" /> ConvertToPdf  method
+/// </summary>
+public class PrintToPdfResult
+{
+    /// <summary>
+    ///     The PDF as base64 string
+    /// </summary>
+    [JsonProperty("data")]
+    public string? Data { get; set; }
 }

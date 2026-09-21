@@ -1,26 +1,25 @@
 ﻿using System;
 
-namespace ChromeHtmlToPdfLib.Helpers
+namespace ChromeHtmlToPdfLib.Helpers;
+
+/// <summary>
+///     Exception helper methods
+/// </summary>
+public static class ExceptionHelpers
 {
     /// <summary>
-    ///     Exception helper methods
+    ///     Returns the full exception with it's inner exceptions as a string
     /// </summary>
-    public static class ExceptionHelpers
+    /// <param name="exception">The exception</param>
+    /// <returns></returns>
+    public static string GetInnerException(Exception exception)
     {
-        /// <summary>
-        ///     Returns the full exception with it's inner exceptions as a string
-        /// </summary>
-        /// <param name="exception">The exception</param>
-        /// <returns></returns>
-        public static string GetInnerException(Exception exception)
-        {
-            var result = string.Empty;
+        var result = string.Empty;
 
-            if (exception == null) return result;
-            result = exception.Message + Environment.NewLine;
-            if (exception.InnerException != null)
-                result += GetInnerException(exception.InnerException);
-            return result;
-        }
+        if (exception == null) return result;
+        result = exception.Message + Environment.NewLine;
+        if (exception.InnerException != null)
+            result += GetInnerException(exception.InnerException);
+        return result;
     }
 }

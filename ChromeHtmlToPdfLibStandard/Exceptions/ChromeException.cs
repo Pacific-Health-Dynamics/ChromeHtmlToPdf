@@ -25,37 +25,35 @@
 //
 
 using System;
-using System.Runtime.Serialization;
 using ChromeHtmlToPdfLib.Protocol;
 
-namespace ChromeHtmlToPdfLib.Exceptions
+namespace ChromeHtmlToPdfLib.Exceptions;
+
+/// <summary>
+///     Raised when an error is returned from Chrome
+/// </summary>
+[Serializable]
+public class ChromeException : ChromePdfConverterException
 {
-    /// <summary>
-    ///     Raised when an error is returned from Chrome
-    /// </summary>
-    [Serializable]
-    public class ChromeException : ChromePdfConverterException
+    public ChromeException()
     {
-        public ChromeException()
-        {
-        }
-
-        public ChromeException(Error error) : base(error.InnerError?.Message ?? "Chrome internal error")
-        {
-            Code = error.InnerError?.Code ?? 0;
-        }
-
-        public ChromeException(string message) : base(message)
-        {
-        }
-
-        public ChromeException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        /// <summary>
-        ///     Returns the error code that is returned from Chrome
-        /// </summary>
-        public double Code { get; }
     }
+
+    public ChromeException(Error error) : base(error.InnerError?.Message ?? "Chrome internal error")
+    {
+        Code = error.InnerError?.Code ?? 0;
+    }
+
+    public ChromeException(string message) : base(message)
+    {
+    }
+
+    public ChromeException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
+    /// <summary>
+    ///     Returns the error code that is returned from Chrome
+    /// </summary>
+    public double Code { get; }
 }

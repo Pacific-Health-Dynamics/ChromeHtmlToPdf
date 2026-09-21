@@ -26,40 +26,39 @@
 
 using Newtonsoft.Json;
 
-namespace ChromeHtmlToPdfLib.Protocol
+namespace ChromeHtmlToPdfLib.Protocol;
+
+/// <summary>
+///     The base for a <see cref="Message" />
+/// </summary>
+public class MessageBase
 {
     /// <summary>
-    ///     The base for a <see cref="Message" />
+    ///     The message id
     /// </summary>
-    public class MessageBase
+    [JsonProperty("id")]
+    public int Id { get; set; }
+
+
+    /// <summary>
+    ///     Returns this object deserialized from the given <paramref name="json" /> string
+    /// </summary>
+    /// <param name="json"></param>
+    /// <returns></returns>
+    public static MessageBase? FromJson(string json)
     {
-        /// <summary>
-        ///     The message id
-        /// </summary>
-        [JsonProperty("id")]
-        public int Id { get; set; }
+        if (json.Length < 1)
+            return null;
+        return JsonConvert.DeserializeObject<MessageBase>(json);
+    }
 
 
-        /// <summary>
-        ///     Returns this object deserialized from the given <paramref name="json" /> string
-        /// </summary>
-        /// <param name="json"></param>
-        /// <returns></returns>
-        public static MessageBase? FromJson(string json)
-        {
-            if (json.Length < 1)
-                return null;
-            return JsonConvert.DeserializeObject<MessageBase>(json);
-        }
-
-
-        /// <summary>
-        ///     Returns this object as a JSON string
-        /// </summary>
-        /// <returns></returns>
-        public string ToJson()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
+    /// <summary>
+    ///     Returns this object as a JSON string
+    /// </summary>
+    /// <returns></returns>
+    public string ToJson()
+    {
+        return JsonConvert.SerializeObject(this);
     }
 }

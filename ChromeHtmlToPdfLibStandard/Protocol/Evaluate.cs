@@ -26,39 +26,38 @@
 
 using Newtonsoft.Json;
 
-namespace ChromeHtmlToPdfLib.Protocol
+namespace ChromeHtmlToPdfLib.Protocol;
+
+public class Evaluate : MessageBase
 {
-    public class Evaluate : MessageBase
+    [JsonProperty("result")] public EvaluateResult? Result { get; set; }
+
+    /// <summary>
+    ///     The method that we want to execute in Chrome
+    /// </summary>
+    [JsonProperty("method")]
+    public string? Method { get; set; }
+
+
+    /// <summary>
+    ///     Returns this object deserialized from the given <paramref name="json" /> string
+    /// </summary>
+    /// <param name="json"></param>
+    /// <returns></returns>
+    public new static Evaluate? FromJson(string json)
     {
-        [JsonProperty("result")] public EvaluateResult? Result { get; set; }
-
-        /// <summary>
-        ///     The method that we want to execute in Chrome
-        /// </summary>
-        [JsonProperty("method")]
-        public string? Method { get; set; }
-
-
-        /// <summary>
-        ///     Returns this object deserialized from the given <paramref name="json" /> string
-        /// </summary>
-        /// <param name="json"></param>
-        /// <returns></returns>
-        public new static Evaluate? FromJson(string json)
-        {
-            return JsonConvert.DeserializeObject<Evaluate>(json);
-        }
+        return JsonConvert.DeserializeObject<Evaluate>(json);
     }
+}
 
-    public class EvaluateResult
-    {
-        [JsonProperty("result")] public EvaluateInnerResult? Result { get; set; }
-    }
+public class EvaluateResult
+{
+    [JsonProperty("result")] public EvaluateInnerResult? Result { get; set; }
+}
 
-    public class EvaluateInnerResult
-    {
-        [JsonProperty("type")] public string? Type { get; set; }
+public class EvaluateInnerResult
+{
+    [JsonProperty("type")] public string? Type { get; set; }
 
-        [JsonProperty("value")] public string? Value { get; set; }
-    }
+    [JsonProperty("value")] public string? Value { get; set; }
 }

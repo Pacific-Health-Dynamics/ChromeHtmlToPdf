@@ -26,46 +26,45 @@
 
 using Newtonsoft.Json;
 
-namespace ChromeHtmlToPdfLib.Protocol
+namespace ChromeHtmlToPdfLib.Protocol;
+
+/// <summary>
+///     The JSON structure that is returned from Chrome when an Error occurs
+/// </summary>
+public class Error : MessageBase
 {
     /// <summary>
-    ///     The JSON structure that is returned from Chrome when an Error occurs
+    ///     <see cref="InnerError" />
     /// </summary>
-    public class Error : MessageBase
-    {
-        /// <summary>
-        ///     <see cref="InnerError" />
-        /// </summary>
-        [JsonProperty("error")]
-        public InnerError? InnerError { get; set; }
+    [JsonProperty("error")]
+    public InnerError? InnerError { get; set; }
 
-
-        /// <summary>
-        ///     Returns this object deserialized from the given <paramref name="json" /> string
-        /// </summary>
-        /// <param name="json"></param>
-        /// <returns></returns>
-        public new static Error? FromJson(string json)
-        {
-            return JsonConvert.DeserializeObject<Error>(json);
-        }
-    }
 
     /// <summary>
-    ///     The inner error
+    ///     Returns this object deserialized from the given <paramref name="json" /> string
     /// </summary>
-    public class InnerError
+    /// <param name="json"></param>
+    /// <returns></returns>
+    public new static Error? FromJson(string json)
     {
-        /// <summary>
-        ///     The error code
-        /// </summary>
-        [JsonProperty("code")]
-        public double Code { get; set; }
-
-        /// <summary>
-        ///     The error message
-        /// </summary>
-        [JsonProperty("message")]
-        public string? Message { get; set; }
+        return JsonConvert.DeserializeObject<Error>(json);
     }
+}
+
+/// <summary>
+///     The inner error
+/// </summary>
+public class InnerError
+{
+    /// <summary>
+    ///     The error code
+    /// </summary>
+    [JsonProperty("code")]
+    public double Code { get; set; }
+
+    /// <summary>
+    ///     The error message
+    /// </summary>
+    [JsonProperty("message")]
+    public string? Message { get; set; }
 }
